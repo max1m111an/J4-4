@@ -6,7 +6,7 @@ import java.util.Random;
 
 //Класс для проигрывания аудио (only mp3) сопровождения при выигрыше/проигрыше
 public class Audio extends Thread{
-    static String s = "C:\\Users\\maksi\\Downloads\\Sounds_Minesweeper\\";
+    static String s = "src\\Minesweeper\\Sounds_Minesweeper\\"; //path to audio files
     //static String Radiohead = s + "Radiohead_-_Karma_Police_47843438.mp3";
     //static String Lain_Trickster = s + "Lain - The Trickster Radiohead (AI COVER) [AMV] [TubeRipper.cc].wav";
     static String OH_MY_GOD = s + "oh-my-god-jo-jo.mp3";
@@ -15,10 +15,10 @@ public class Audio extends Thread{
     static String NICE = s + "joseph-joestar-nice-101soundboards.mp3";
     static String YES_YES_YES = s + "yes-yes-yes-yes-yes.mp3";
     static String NO_NO_NO = s + "jotaro-no.mp3";
+    //static String YES_I_AM = s + "";
     //static String METAL_PIPE = s + "metal pipe .mp3";
 
-    /*public static void main(String[] args) {
-    }*/
+    //public static void main(String[] args) {}
     public static boolean win_or_lose;
 
     public Audio(boolean win_or_lose) {
@@ -26,6 +26,7 @@ public class Audio extends Thread{
     }
 
     //иницилизация метода многопоточного проигрывания
+    //ДЕРЬМО ЕБАННОЕ НЕ РАБОТАЕТ ААА
     @Override
     public void run(){
         if(this.win_or_lose){
@@ -81,6 +82,9 @@ public class Audio extends Thread{
             case 1:
                 playSound(YES_YES_YES);
                 break;
+            /*case 2:
+                playSound(YES_I_AM);
+                break;*/
         }
     }
 }
