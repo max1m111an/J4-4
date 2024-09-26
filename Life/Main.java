@@ -11,6 +11,7 @@ public class Main {
     JFrame jf = new JFrame(Const.Name);
     JPanel text_stuff = new JPanel();
     JPanel panel = new JPanel();
+    JPanel infoSet = new JPanel();
 
     JLabel text = new JLabel();
     JButton Restart = new JButton("Restart retard");
@@ -18,23 +19,37 @@ public class Main {
     JButton Draw = new JButton("Draw hoe");
 
     Cell[][] cc = new Cell[Const.Rows][Const.Cols];
-    public static ArrayList<Cell> liveCells;
+    public final static ArrayList<Cell> liveCells = new ArrayList<>();
+    public static ArrayList<Cell> copyCells = new ArrayList<>();
 
     static boolean toDraw = true;
 
-    Timer time = new Timer(20, e -> {
-        if (!Game_Over()) {
-            start();
-            panel.revalidate();
-        } else {
-            System.out.println("Game Over!");
-            return;
-        }
-    });
+    JButton SpeedUp = new JButton("Speed Up");
+    JButton SpeedDown = new JButton("Speed Down");
+    JLabel gen = new JLabel();
+    static int generation = 0;
+    static int periodSize = 0;
+    static int speed = 100;
+
+    Timer time;
 
     Main() {
+        time = new Timer(speed, e3 -> {
+            if (!Game_Over()) {
+                start();
+                /*if(periodSize == liveCells.size()){
+                    time.stop();
+                    text.setText(Const.txt + ": Game Over!");
+                }*/
+                periodSize = liveCells.size();
+            } else {
+                text.setText(Const.txt + ": Game Over!");
+            }
+
+        });
+
         //Инициализация текстовых окон и игрового поля
-        jf.setSize(Const.Width, Const.Height + 200);
+        jf.setSize(Const.Width, Const.Height+100);
         jf.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         jf.setLocationRelativeTo(null);
         //jf.setResizable(false);
@@ -45,12 +60,24 @@ public class Main {
         text.setHorizontalAlignment(JLabel.CENTER);
         text.setText(Const.txt);
         text.setOpaque(true);
-
-        text_stuff.setLayout(new GridLayout(1, 3));
+        text_stuff.setLayout(new GridLayout(1, 4));
 
         Restart.setBackground(Color.BLACK);
         Restart.setForeground(Color.WHITE);
         Restart.setFont(new Font("Impact", Font.PLAIN, 25));
+
+        SpeedUp.setBackground(Color.BLACK);
+        SpeedUp.setForeground(Color.WHITE);
+        SpeedUp.setFont(new Font("Impact", Font.PLAIN, 25));
+
+        SpeedDown.setBackground(Color.BLACK);
+        SpeedDown.setForeground(Color.WHITE);
+        SpeedDown.setFont(new Font("Impact", Font.PLAIN, 25));
+
+        gen.setFont(new Font("Impact", Font.PLAIN, 25));
+        gen.setHorizontalAlignment(JLabel.CENTER);
+        gen.setText(Const.info);
+        gen.setOpaque(true);
 
         Start.setBackground(Color.BLACK);
         Start.setForeground(Color.WHITE);
@@ -61,54 +88,71 @@ public class Main {
         Draw.setForeground(Color.WHITE);
         Draw.setFont(new Font("Impact", Font.PLAIN, 25));
 
+        infoSet.setLayout(new GridLayout(1, 3));
+        infoSet.add(gen);
+        infoSet.add(SpeedUp);
+        infoSet.add(SpeedDown);
+
         text_stuff.add(text);
         text_stuff.add(Restart);
         text_stuff.add(Start);
         text_stuff.add(Draw);
         jf.add(text_stuff, BorderLayout.NORTH);
+        jf.add(infoSet, BorderLayout.SOUTH);
         panel.setLayout(new GridLayout(Const.Rows, Const.Cols, 0, 0));
 
         jf.add(panel, BorderLayout.CENTER);
-        panel.setBorder(BorderFactory.createLineBorder(Color.RED));
+        panel.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+
+        //Увеличение/уменьшение скорости генерации
+        SpeedDown.addActionListener(e1 -> {
+            time.setDelay(speed + 20);
+            speed += 20;
+        });
+
+        SpeedUp.addActionListener(e2 -> {
+            if(time.getDelay() >= 20) {
+                time.setDelay(speed - 20);
+                speed -= 20;
+            }
+        });
 
         //Кнопка перезапуска
-        Restart.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1) {
-                    //очистка панели клеток
-                    //обновление рисования
-                    time.stop();
-                    panel.removeAll();
-                    //panel.repaint();
-                    panel.revalidate();
-                    toDraw = true;
-                    text.setText(Const.txt);
-                    Start.setEnabled(false);
-                    Const.randCellsAlive = new Random().nextInt(Const.Rows * Const.Cols / 5) + Const.Rows * Const.Cols / 10;
-                    DrawLayout();
-                }
-            }
+        Restart.addActionListener(e3 -> {
+            //очистка панели клеток
+            //обновление рисования
+            time.stop();
+            panel.removeAll();
+            //panel.repaint();
+            panel.revalidate();
+            toDraw = true;
+            text.setText(Const.txt);
+            gen.setText(Const.info);
+            Start.setEnabled(false);
+            copyCells.clear();
+            liveCells.clear();
+            generation = 0;
+            speed = 100;
+            Const.randCellsAlive = new Random().nextInt(Const.Rows * Const.Cols / 5)
+                    + Const.Rows * Const.Cols / 10;
+            DrawLayout();
         });
 
         //Кнопка запуска
-        Start.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1 && Start.isEnabled()) {
-                    time.start();
-                    Start.setEnabled(false);
-                    toDraw = false;
-                    disable();
-                }
+        Start.addActionListener(e4 -> {
+            if (Start.isEnabled()) {
+                time.start();
+                Start.setEnabled(false);
+                Draw.setEnabled(false);
+                toDraw = false;
+                disable();
             }
         });
 
-        Draw.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                if (e.getButton() == MouseEvent.BUTTON1 && Draw.isEnabled()) {
-                    /*JFrame randLife = new JFrame("How many are alive?");
+        //рандомный рисунок
+        Draw.addActionListener(e5 -> {
+            if (Draw.isEnabled()) {
+             /*JFrame randLife = new JFrame("How many are alive?");
                     randLife.setSize(300, 300);
                     randLife.setLayout(new BorderLayout());
 
@@ -118,11 +162,11 @@ public class Main {
                     randLife.add(alive, BorderLayout.CENTER);
                     randLife.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
                     randLife.setVisible(true);*/
-                    randGen();
-                    text.setText(Const.txt + ":  " + liveCells.size());
-                }
+                randGen();
+                text.setText(Const.txt + ":  " + liveCells.size());
             }
         });
+
         DrawLayout();
         jf.setVisible(true);
     }
@@ -130,13 +174,22 @@ public class Main {
     //"Смерть" клетки, если соседей НЕ 2 или НЕ 3
     void Die(Cell c) {
         liveCells.remove(c);
-        c.setBackground(Color.WHITE);
+        c.setBackground(Const.NORM);
     }
 
     //Клетка становится "живой", если рядом 3 "живых" клетки
     void Born(Cell c) {
         liveCells.add(c);
         c.setBackground(Color.BLACK);
+    }
+
+    //смена состояниа клетки на противоположное (отрицание)
+    void Inverse(Cell c){
+        if (liveCells.contains(c)) {
+            Die(c);
+        } else {
+            Born(c);
+        }
     }
 
     //Проверка на "жизнь" клетки
@@ -150,31 +203,40 @@ public class Main {
         return 0;
     }
 
+    //копия поля живых клеток
+    public int copyCheckLife(int x, int y) {
+        if (x < 0 || x >= Const.Rows || y < 0 || y >= Const.Cols) {
+            return 0;
+        }
+        if (copyCells.contains(cc[x][y])) {
+            return 1;
+        }
+        return 0;
+    }
+
     //проверка жизни клетки
     public void check(int x, int y) {
+
         if (x < 0 || x >= Const.Rows || y < 0 || y >= Const.Cols) return;
 
         Cell c = cc[x][y];
         int count_of_cells = 0;
 
-        count_of_cells += checkLife(x - 1, y - 1);
-        count_of_cells += checkLife(x - 1, y + 1);
-        count_of_cells += checkLife(x - 1, y);
-        count_of_cells += checkLife(x + 1, y - 1);
-        count_of_cells += checkLife(x + 1, y + 1);
-        count_of_cells += checkLife(x + 1, y);
-        count_of_cells += checkLife(x, y - 1);
-        count_of_cells += checkLife(x, y + 1);
+        count_of_cells += copyCheckLife(x - 1, y - 1);
+        count_of_cells += copyCheckLife(x - 1, y + 1);
+        count_of_cells += copyCheckLife(x - 1, y);
+        count_of_cells += copyCheckLife(x + 1, y - 1);
+        count_of_cells += copyCheckLife(x + 1, y + 1);
+        count_of_cells += copyCheckLife(x + 1, y);
+        count_of_cells += copyCheckLife(x, y - 1);
+        count_of_cells += copyCheckLife(x, y + 1);
 
         //System.out.print(count_of_cells!=0 ? count_of_cells+"\n":"");
-
-        if ((count_of_cells != 2 && count_of_cells != 3) && liveCells.contains(c)) {
-            Die(c);
-        } else {
-            if (count_of_cells == 3 && !liveCells.contains(c)) {
-                Born(c);
+        if (count_of_cells == 3 && !copyCells.contains(c)) {
+            Born(c);
+        }else if ((count_of_cells != 2 && count_of_cells != 3) && copyCells.contains(c)) {
+                Die(c);
             }
-        }
     }
 
     public void disable() {
@@ -183,19 +245,17 @@ public class Main {
                 ll.setEnabled(false);
             }
         }
-
     }
 
     //Пользователь рисует изначальную схему, по которой прогоняется
-    //алогритм жизни
+    //алгоритм жизни
     public void DrawLayout() {
-        liveCells = new ArrayList<>();
         for (int i = 0; i < Const.Rows; i++) {
             for (int j = 0; j < Const.Cols; j++) {
                 Cell c = new Cell(j, i);
                 cc[i][j] = c;
                 c.setFocusable(false);
-                c.setBackground(Color.WHITE);
+                c.setBackground(Const.NORM);
                 c.setBorder(null);
                 c.setMargin(new Insets(0, 0, 0, 0));
                 c.setEnabled(true);
@@ -205,7 +265,7 @@ public class Main {
                         Cell c = (Cell) e.getSource();
                         if (e.getButton() == MouseEvent.BUTTON1) {
                             if (c.isEnabled() && toDraw) {
-                                if (c.getBackground().equals(Color.WHITE)) {
+                                if (c.getBackground().equals(Const.NORM)) {
                                     Born(c);
                                     text.setText(Const.txt + ":  " + liveCells.size());
                                     Start.setEnabled(true);
@@ -230,21 +290,21 @@ public class Main {
         return liveCells.size() == 0;
     }
 
-    //рандомная генерация "первой жизни"
+    //рандомная генерация "жизни"
     public void randGen() {
         Draw.setEnabled(false);
-        liveCells = new ArrayList<>();
         for (int i = 0; i < Const.randCellsAlive; i++) {
             int randX = new Random().nextInt(Const.Rows);
             int randY = new Random().nextInt(Const.Cols);
-            Born(cc[randX][randY]);
+            if(!liveCells.contains(cc[randX][randY])){Born(cc[randX][randY]);}
+            else i--;
         }
         Start.setEnabled(true);
     }
 
     public void printArray(ArrayList<Cell> arr) {
-        for (int i = 0; i < arr.size(); i++) {
-            System.out.print("(" + arr.get(i).getX() + " " + arr.get(i).getY() + "); ");
+        for (Cell cell : arr) {
+            System.out.print("(" + cell.getX() + ", " + cell.getY() + "); ");
         }
     }
 
@@ -252,11 +312,14 @@ public class Main {
     public void start() {
         /*Cell Sergey = new Cell(13, 37);
         Sergey.Born();*/
-        for (int i = 0; i < Const.Cols; i++) {
-            for (int j = 0; j < Const.Rows; j++) {
+        copyCells = new ArrayList<>(liveCells);
+        for (int j = 0; j < Const.Rows; j++) {
+            for (int i = 0; i < Const.Cols; i++) {
                 check(j, i);
-                text.setText(Const.txt + ":  " + liveCells.size());//сделать потоки
+                gen.setText(Const.info + ": " + generation);
+                text.setText(Const.txt + ": " + liveCells.size());
             }
         }
+        generation++;
     }
 }
