@@ -14,8 +14,7 @@ public class Test {
     public Test() {
 
     }
-
-
+    
     public boolean isVisible() {
         return visible;
     }
